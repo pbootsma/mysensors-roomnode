@@ -28,8 +28,6 @@ Si7021 tempHumiditySensor;
 	MyMessage msgMq135(CHILD_ID_MQ_135, V_LEVEL);
 #endif
 
-int RAW_VOLT_PIN = A0;
-
 unsigned long lastSendTime = 0;
 
 void setup()
@@ -127,7 +125,7 @@ void readSensorsAndSendData() {
 		// Battery voltage
 		float voltValue = 0;
 		for (int i=0; i<ROOMNODE_BATTERY_SAMPLE_COUNT; i++) {
-			voltValue += analogRead(RAW_VOLT_PIN)/(ROOMNODE_BATTERY_SAMPLE_COUNT * 1.0);
+			voltValue += analogRead(ROOMNODE_BATTERY_PIN)/(ROOMNODE_BATTERY_SAMPLE_COUNT * 1.0);
 		}
 		float volt = voltValue/1023.0 * 1.1 * VOLTAGE_DIVIDER_FACTOR;
 		send(msgVolt.set(volt, 3));
