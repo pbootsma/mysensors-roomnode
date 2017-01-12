@@ -2,19 +2,18 @@
   Roomnode.ino - Sketch for MySensors temperature and humidity node
 */
 
+#include "Config.h"
+
 #include <SPI.h>
 #include <Wire.h>
-#include <MySensor.h>
+#include <MySensors.h>
 #include <avr/power.h>
 #include "Si7021.h"
-#include "Config.h"
 
 #define CHILD_ID_TEMP 0
 #define CHILD_ID_HUM 1
 #define CHILD_ID_VOLT 2
 #define CHILD_ID_MQ_135 3
-
-MySensor gw;
 
 Si7021 tempHumiditySensor;
 
@@ -51,49 +50,45 @@ void setup()
 		pinMode(ROOMNODE_SENSORS_POWER_PIN, OUTPUT);
 		digitalWrite(ROOMNODE_SENSORS_POWER_PIN, HIGH);
 	#endif
-
-	#ifdef ROOMNODE_IS_REPEATER
-		gw.begin(NULL, AUTO, true);
-	#else
-		gw.begin();
-	#endif
-
-	// Send the Sketch Version Information to the Gateway
-	gw.sendSketchInfo(ROOMNODE_NAME, ROOMNODE_VERSION);
-
-	// Register all sensors to gw (they will be created as child devices)
-	#ifdef ROOMNODE_HAS_SI7021
-		gw.present(CHILD_ID_HUM, S_HUM, "Si7021");
-		gw.present(CHILD_ID_TEMP, S_TEMP, "Si7021");
-		
-		// Start  Si7021
-		tempHumiditySensor.begin();
-	#endif
-	
-	#ifdef ROOMNODE_HAS_MQ_135
-		gw.present(CHILD_ID_MQ_135, S_AIR_QUALITY, "MQ-135");
-	#endif
-	
-	#ifdef ROOMNODE_BATTERY_POWERED
-		gw.present(CHILD_ID_VOLT, S_MULTIMETER, "Battery");
-	#endif
 	
 	Serial.println("Sketch setup done");
+}
+
+void presentation() 
+{
+  // Send the Sketch Version Information to the Gateway
+  sendSketchInfo(ROOMNODE_NAME, ROOMNODE_VERSION);
+
+  // Register all sensors to gw (they will be created as child devices)
+  #ifdef ROOMNODE_HAS_SI7021
+    present(CHILD_ID_HUM, S_HUM, "Si7021");
+    present(CHILD_ID_TEMP, S_TEMP, "Si7021");
+    
+    // Start  Si7021
+    tempHumiditySensor.begin();
+  #endif
+  
+  #ifdef ROOMNODE_HAS_MQ_135
+    present(CHILD_ID_MQ_135, S_AIR_QUALITY, "MQ-135");
+  #endif
+  
+  #ifdef ROOMNODE_BATTERY_POWERED
+    present(CHILD_ID_VOLT, S_MULTIMETER, "Battery");
+  #endif
 }
 
 void loop()
 {
 	unsigned long loopStart = millis();
 	
-	#ifdef ROOMNODE_IS_REPEATER
+	#ifdef MY_REPEATER_FEATURE
 		if ((loopStart - lastSendTime) > ROOMNODE_SEND_INTERVAL) {
 			readSensorsAndSendData();
 			lastSendTime = loopStart;
 		}
-		gw.process();
 	#else
 		readSensorsAndSendData();
-		gw.sleep(ROOMNODE_SEND_INTERVAL);
+		sleep(ROOMNODE_SEND_INTERVAL);
 	#endif
 }
 
@@ -110,10 +105,10 @@ void readSensorsAndSendData() {
 	
 		if (tempHumidityRead) {
 			// Send temperature through RF
-			gw.send(msgTemp.set(tempHumiditySensor.temperature, 1));
+			send(msgTemp.set(tempHumiditySensor.temperature, 1));
 		
 			// Send Humidity through RF
-			gw.send(msgHum.set(tempHumiditySensor.humidity, 1));
+			send(msgHum.set(tempHumiditySensor.humidity, 1));
 		}
 	#endif
 
@@ -125,7 +120,7 @@ void readSensorsAndSendData() {
 	#ifdef ROOMNODE_HAS_MQ_135
 		int mq135Value = analogRead(ROOMNODE_MQ_135_PIN);
 		int mq135Ppm = (mq135Value/1023.0) * ROOMNODE_MQ_135_MAX_PPM;
-		gw.send(msgMq135.set(mq135Ppm));
+		send(msgMq135.set(mq135Ppm));
 	#endif
 
 	#ifdef ROOMNODE_BATTERY_POWERED
@@ -135,12 +130,12 @@ void readSensorsAndSendData() {
 			voltValue += analogRead(RAW_VOLT_PIN)/(ROOMNODE_BATTERY_SAMPLE_COUNT * 1.0);
 		}
 		float volt = voltValue/1023.0 * 1.1 * VOLTAGE_DIVIDER_FACTOR;
-		gw.send(msgVolt.set(volt, 3));
+		send(msgVolt.set(volt, 3));
 		
 		// Battery percentage
 		int batteryPcnt = 100*(volt - ROOMNODE_BATTERY_EMPTY_VOLT)/(ROOMNODE_BATTERY_FULL_VOLT-ROOMNODE_BATTERY_EMPTY_VOLT);
 		if (batteryPcnt > 100) batteryPcnt = 100;
-		gw.sendBatteryLevel(batteryPcnt);
+		sendBatteryLevel(batteryPcnt);
 	#endif
 }
 
