@@ -22,8 +22,10 @@
 //#define ROOMNODE_BATTERY_POWERED
 #define ROOMNODE_BATTERY_PIN = A0;
 #define ROOMNODE_BATTERY_SAMPLE_COUNT 5
-#define ROOMNODE_BATTERY_FULL_VOLT 2.8
-#define ROOMNODE_BATTERY_EMPTY_VOLT 1.8
+
+// Voltage range for rechargeable aaa
+#define ROOMNODE_BATTERY_FULL_VOLT 2.75
+#define ROOMNODE_BATTERY_EMPTY_VOLT 2.0 // 1.8 really empty, but last volts go really fast
 
 // Define which roomnode config to use
 //#define ROOMNODE_WOONKAMER
